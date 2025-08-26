@@ -6,7 +6,7 @@ import joblib
 import os
 import pickle
 
-model_path = os.path.join(os.path.dirname(__file__), "../models/trained_model.pkl")
+model_path = os.path.join(os.path.dirname(__file__), "../models/final_model.pkl")
 final_model = joblib.load(model_path)
 X_not_draw = pd.read_csv(os.path.join(os.path.dirname(__file__), "../data/train/X_not_draw.csv"))
 
