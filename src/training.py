@@ -456,7 +456,6 @@ def training():
         
     ]
 
-    # Salvar cada modelo com identificador n
     for i, (name, model) in enumerate(trained_models, start=1):
         file_path = os.path.join(base_dir, '..', 'models', f'trained_model_{i}.pkl')
         with open(file_path, 'wb') as f:
