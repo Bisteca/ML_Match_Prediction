@@ -2,7 +2,7 @@ streamlit
 pandas
 numpy
 scikit-learn
-RandomForestClassifier
+sklearn
 joblib
 os
 pickle
