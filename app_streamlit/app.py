@@ -5,7 +5,7 @@ from sklearn.ensemble import RandomForestClassifier
 import joblib
 import os
 import pickle
-
+from datetime import datetime
 BASE_DIR = os.path.dirname(__file__)  # Diretório onde app.py está
 model_path = os.path.join(BASE_DIR, "../models/final_model.pkl")
 
@@ -29,7 +29,6 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
     # --- Basic match info ---
 
     X_not_draw = df_league
-    X_not_draw.drop(columns='Division')
     date = pd.to_datetime(Date)
     home_team = HomeTeam.title()
     away_team = AwayTeam.title()
@@ -121,60 +120,77 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
     delta = 0.03
     total = 1
     if abs(p_home - p_away) < delta:
-            p_draw = (abs(p_home - p_away)) / 2
-            p_home -= p_draw / 2
-            p_away -= p_draw / 2
+        p_draw = max(delta - abs(p_home - p_away), 0)
     else:
-            p_draw = 0 
+        p_draw = 0
 
-    total = p_home + p_draw + p_away
-    p_home, p_draw, p_away = round((p_home/total) * 100, 2), round((p_draw/total) * 100, 2), round((p_away/total) * 100, 2)
+    total = p_home + p_away + p_draw
+    p_home = round((p_home / total) * 100, 2)
+    p_draw = round((p_draw / total) * 100, 2)
+    p_away = round((p_away / total) * 100, 2)
 
     b = f'{home_team}: {p_home}% - Draw: {p_draw}% - {away_team}: {p_away}% '
 
     return b
 
-
-
-st.title("Match Predictor!")
-st.subheader("This is a match predictors, please put two teams and select the date that they are playing.")
-
-league = st.selectbox(
-    "Select the league:",
-    ["LaLiga", "Premier League", "Serie A", "Bundesliga", "Ligue 1"]
+# --- Streamlit ---
+# --- Título e descrição ---
+st.title("⚽ Match Predictor!")
+st.markdown(
+    """
+    Welcome to the Match Predictor!  
+    Select the Home and Away teams, enter the date of the match, and click **Predict**  
+    to see the probability of Home win, Draw, and Away win.
+    """,
+    unsafe_allow_html=True
 )
 
+# --- Seleção de liga ---
+leagues = [
+    ("LaLiga", "SP1"),
+    ("Premier League", "E0"),
+    ("Serie A", "I1"),
+    ("Bundesliga", "D1"),
+    ("Ligue 1", "F1")
+]
 
-home_team = st.text_input("Enter the Home Team", key=f"home_{league}")
-away_team = st.text_input("Enter the Away Team", key=f"away_{league}")
-date = st.text_input("Enter the date of the game (YYYY/MM/DD)", key=f"date_{league}")
+league_name = st.selectbox("Select the league:", [l[0] for l in leagues])
+league_code = next(code for name, code in leagues if name == league_name)
 
-if league == "LaLiga":
-    df_league = X_not_draw[X_not_draw['Division'].isin(['SP1'])]
-elif league == "Premier League":
-    df_league = X_not_draw[X_not_draw['Division'].isin(['E0'])]
-elif league == "Serie A":
-    df_league = X_not_draw[X_not_draw['Division'].isin(['I1'])]
-elif league == "Bundesliga":
-    df_league = X_not_draw[X_not_draw['Division'].isin(['D1'])]
-elif league == "Ligue 1":
-    df_league = X_not_draw[X_not_draw['Division'].isin(['F1'])]
+# --- Filtrar DataFrame ---
+df_league = X_not_draw[X_not_draw['Division'].isin([league_code])]
 
-available_teams = pd.unique(df_league[['HomeTeam', 'AwayTeam']].values.ravel())
-
+# --- Lista de times ---
+available_teams = sorted(pd.unique(df_league[['HomeTeam', 'AwayTeam']].values.ravel()))
 with st.expander("See available teams"):
-    st.write(available_teams)
+    st.dataframe(pd.DataFrame(available_teams, columns=["Teams"]))
 
-if st.button("Predict", key=f"btn_{league}"):
-    if not home_team or not away_team or not date:
+
+
+# --- Multiselect para times ---
+home_team = st.selectbox("Select the Home Team:", available_teams, index=0)
+
+# Filtrar para não permitir escolher o mesmo time como Away
+away_options = [team for team in available_teams if team != home_team]
+
+# Seleção do Away Team
+away_team = st.selectbox("Select the Away Team:", away_options, index=0)
+
+# Input de data
+date_str = st.text_input("Enter the date of the match (YYYY-MM-DD):", "")
+
+# Botão de previsão
+if st.button("Predict"):
+    if not home_team or not away_team or not date_str:
         st.warning("Please fill all fields!")
     else:
-        prediction = prob(date, home_team, away_team, df_league)
-        st.markdown(
-            f"<h3 style='color:green'>Prediction:</h3><p style='font-size:20px'>{prediction}</p>",
-            unsafe_allow_html=True
-        )
-
-
-
-
+        try:
+            from datetime import datetime
+            datetime.strptime(date_str, "%Y-%m-%d")  # validação da data
+            prediction = prob(date_str, home_team, away_team, df_league)
+            st.markdown(
+                f"<h3 style='color:green'>Prediction:</h3><p style='font-size:20px'>{prediction}</p>",
+                unsafe_allow_html=True
+            )
+        except ValueError:
+            st.warning("Date must be in YYYY-MM-DD format.")
