@@ -6,9 +6,12 @@ import joblib
 import os
 import pickle
 
-model_path = os.path.join(os.path.dirname(__file__), "../models/final_model.pkl")
+BASE_DIR = os.path.dirname(__file__)  # Diretório onde app.py está
+model_path = os.path.join(BASE_DIR, "../models/final_model.pkl")
+
 final_model = joblib.load(model_path)
-X_not_draw = pd.read_csv(os.path.join(os.path.dirname(__file__), "../data/train/X_not_draw.csv"))
+X_not_draw_path = os.path.join(BASE_DIR, "../data/train/X_not_draw.csv")
+X_not_draw = pd.read_csv(X_not_draw_path)
 
 
 def prob(Date, HomeTeam, AwayTeam, df_league):
@@ -117,16 +120,15 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
     p_home, p_away = y_proba[1], y_proba[0]
     delta = 0.03
     total = 1
-    for x in y_proba:
-        if abs(p_home - p_away) < delta:
+    if abs(p_home - p_away) < delta:
             p_draw = (abs(p_home - p_away)) / 2
             p_home -= p_draw / 2
             p_away -= p_draw / 2
-        else:
+    else:
             p_draw = 0 
 
-        total = p_home + p_draw + p_away
-        p_home, p_draw, p_away = round((p_home/total) * 100, 2), round((p_draw/total) * 100, 2), round((p_away/total) * 100, 2)
+    total = p_home + p_draw + p_away
+    p_home, p_draw, p_away = round((p_home/total) * 100, 2), round((p_draw/total) * 100, 2), round((p_away/total) * 100, 2)
 
     b = f'{home_team}: {p_home}% - Draw: {p_draw}% - {away_team}: {p_away}% '
 
@@ -135,7 +137,7 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
 
 
 st.title("Match Predictor!")
-st.subheader("This is a match predictor for LaLiga, please put two teams and select the date that they are playing.")
+st.subheader("This is a match predictors, please put two teams and select the date that they are playing.")
 
 league = st.selectbox(
     "Select the league:",
