@@ -6,9 +6,9 @@ import joblib
 import os
 import pickle
 
-model_path = "../models/final_model.pkl"
+model_path = os.path.join(os.path.dirname(__file__), "../models/trained_model.pkl")
 final_model = joblib.load(model_path)
-X_not_draw= pd.read_csv("../data/train/X_not_draw.csv")
+X_not_draw = pd.read_csv(os.path.join(os.path.dirname(__file__), "../data/train/X_not_draw.csv"))
 
 
 def prob(Date, HomeTeam, AwayTeam, df_league):
@@ -162,7 +162,7 @@ available_teams = pd.unique(df_league[['HomeTeam', 'AwayTeam']].values.ravel())
 
 with st.expander("See available teams"):
     st.write(available_teams)
-    
+
 if st.button("Predict", key=f"btn_{league}"):
     if not home_team or not away_team or not date:
         st.warning("Please fill all fields!")
