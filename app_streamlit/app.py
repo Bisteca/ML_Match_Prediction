@@ -160,17 +160,19 @@ elif league == "Ligue 1":
 
 available_teams = pd.unique(df_league[['HomeTeam', 'AwayTeam']].values.ravel())
 
-st.write("Available teams in this league:")
-st.write(available_teams)
-
-
+with st.expander("See available teams"):
+    st.write(available_teams)
+    
 if st.button("Predict", key=f"btn_{league}"):
     if not home_team or not away_team or not date:
         st.warning("Please fill all fields!")
     else:
-        try:
-            prediction = prob(date, home_team, away_team, df_league)
-            st.success(f"Prediction:\n{prediction}")
-        except Exception as e:
-            st.error(f"Error: {e}")
+        prediction = prob(date, home_team, away_team, df_league)
+        st.markdown(
+            f"<h3 style='color:green'>Prediction:</h3><p style='font-size:20px'>{prediction}</p>",
+            unsafe_allow_html=True
+        )
+
+
+
 
