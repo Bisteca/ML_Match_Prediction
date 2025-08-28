@@ -1,15 +1,16 @@
-⚽ Predicción de Resultados de Partidos de Fútbol con Machine Learning
+**⚽ Football Match Outcome Prediction with Machine Learning**
 
-📌 Descripción del Proyecto
+📌 **Project Description**
 
-Este proyecto tiene como objetivo predecir los resultados de partidos de fútbol (victoria local o visitante) utilizando Machine Learning.
+This project aims to predict football match results (home win or away win) using Machine Learning.
 
-Motivación: demostrar cómo la analítica de datos y los algoritmos de clasificación pueden aplicarse en el deporte, generando insights útiles y apoyando decisiones en contextos como apuestas deportivas, scouting y análisis de rendimiento.
+Motivation: to demonstrate how data analytics and classification algorithms can be applied in sports, generating useful insights and supporting decisions in contexts such as sports betting, scouting, and performance analysis.
 
-Incluye:
+The project includes:
 
-Preprocesamiento de datos históricos de partidos.
+- Preprocessing of historical match data.
 
-Entrenamiento y evaluación de modelos: Logistic Regression, Random Forest, KNN, XGBoost y LightGBM.
+- Training and evaluation of models: Logistic Regression, Random Forest, KNN, XGBoost, and LightGBM.
 
-Aplicación interactiva en Streamlit para probar el modelo.
+- Interactive Streamlit app to easily test the model.
+
