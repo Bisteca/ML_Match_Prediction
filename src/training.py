@@ -437,9 +437,8 @@ def training():
 
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-
-    os.makedirs(os.path.join(base_dir, '..', 'models'), exist_ok=True)
-
+    models_dir = os.path.join(base_dir, '..', 'models')
+    os.makedirs(models_dir, exist_ok=True)
 
     trained_models = [
         ('LogisticRegression_NoDraw', logistic_RS_nd),
@@ -453,16 +452,17 @@ def training():
         ('GBM_NoDraw', gbm_RS_nd),
         ('GBM_Draw', gbm_RS),
 
-        
+            
     ]
 
-    for i, (name, model) in enumerate(trained_models, start=1):
-        file_path = os.path.join(base_dir, '..', 'models', f'trained_model_{i}.pkl')
-        with open(file_path, 'wb') as f:
-            pickle.dump(model, f)
-        print(f'Saved {name} as {file_path}')
+    for name, model in trained_models:
+        file_path = os.path.join(models_dir, f"{name}.joblib")
+        joblib.dump(model, file_path)
+        print(f"Saved {name} at {file_path}")
 
-    joblib.dump(random_forest_RS_nd, os.path.join(base_dir, '..', 'models', 'final_model.pkl'))
+    final_model_path = os.path.join(models_dir, 'final_model.joblib')
+    joblib.dump(random_forest_RS_nd, final_model_path)
+    print(f"Final model saved at {final_model_path}")
 
 
 if __name__ == "__main__":
