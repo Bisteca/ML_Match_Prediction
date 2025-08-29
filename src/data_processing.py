@@ -9,15 +9,15 @@ def process_data():
     Reads CSV files from data/raw, processes them (if needed), 
     and saves the final dataframe to data/processed.
     """
-    os.makedirs('../data/processed', exist_ok=True)
-
-    raw_file = 'data/raw/Matches.csv'
-
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    raw_file = os.path.join(base_dir, '..', 'data', 'raw', 'Matches.csv')
     df = pd.read_csv(raw_file)
 
 
+
     # Feature engineering
-    df = df[df['Division'].isin(['SP1'])]
+    leagues = ['SP1', 'E0', 'I1', 'D1', 'F1']  # SP1=LaLiga, E0=Premier League, I1=Serie A, D1=Bundesliga, F1=Ligue 1
+    df = df[df['Division'].isin(leagues)]
     df.drop(columns=['MatchTime'], inplace= True )
     df = df.fillna(0) 
     
@@ -45,7 +45,7 @@ def process_data():
     df['Form3Difference'] = df['Form3Home'] - df['Form3Away'] 
     df['Form5Difference'] = df['Form5Home'] - df['Form5Away'] 
 
-    df['ImpliedProbTotal'] = df['ImpliedProbHome'] + + df['ImpliedProbAway'] 
+    df['ImpliedProbTotal'] = df['ImpliedProbHome']  + df['ImpliedProbAway'] 
 
     df['BookmakerMargin'] = df['ImpliedProbTotal'] - 1 
 
@@ -263,10 +263,16 @@ def process_data():
 
     df['OddSkew'] = (df['OddHome'] - df['OddAway']) / (df['OddHome'] + df['OddAway'])
 
-    processed_file = '../data/processed/processed_data.csv'
+    df = df.replace([np.inf, -np.inf], 0).fillna(0)
+
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    processed_dir = os.path.join(base_dir, '..', 'data', 'processed')
+    os.makedirs(processed_dir, exist_ok=True)
+
+    processed_file = os.path.join(processed_dir, 'processed_data.csv')
     df.to_csv(processed_file, index=False)
     print(f'Processed data saved to {processed_file}')
-
 
 if __name__ == "__main__":
     process_data()

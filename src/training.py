@@ -15,11 +15,12 @@ from imblearn.pipeline import Pipeline
 import joblib
 import os
 import pickle
+from sklearn.impute import SimpleImputer
 
 
 def training():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    raw_file = os.path.join(base_dir, '..', 'data', 'processed', 'matches_processed.csv')
+    raw_file = os.path.join(base_dir, '..', 'data', 'processed', 'processed_data.csv')
     df = pd.read_csv(raw_file)
 
 
@@ -33,7 +34,7 @@ def training():
     df = df[(df['HomeTeam'].isin(valid_teams)) & (df['AwayTeam'].isin(valid_teams))]
 
 
-    X = df[['MatchDate', 'HomeTeam', 'AwayTeam', 'Year',  'IsWeekend',
+    X = df[['Division','MatchDate', 'HomeTeam', 'AwayTeam', 'Year',  'IsWeekend',
          'C_LTH', 'C_LTA', 'C_VHD', 'C_VAD', 'C_HTB', 'C_PHB',
         'HomeElo', 'AwayElo', 'EloDifference', 'Form3Home', 'Form5Home', 'Form3Away', 'Form5Away', 'Form3Difference', 'Form5Difference',
         'GF3Home', 'GF3Away', 'GA3Home', 'GA3Away', 'GF5Home', 'GF5Away', 'GA5Home', 'GA5Away',
@@ -63,8 +64,12 @@ def training():
     X_not_draw = X_not_draw.drop(columns=cols_draw)
     y_not_draw = y[not_draw].copy()
 
+    X_history = X_not_draw.copy() 
+    if 'Division' not in X_history.columns:
+        X_history['Division'] = df['Division'] 
 
-
+    os.makedirs('../data/processed', exist_ok=True)
+    X_history.to_csv('../data/processed/X_history.csv', index=False)
 
     X_train = X[X['MatchDate'] < '2021-07'].drop(columns='MatchDate')
     X_test = X[X['MatchDate'] > '2021-08'].drop(columns='MatchDate')
@@ -94,9 +99,21 @@ def training():
     y_train_nd.to_csv('../data/train/y_train_nd.csv', index=False)
     y_test_nd.to_csv('../data/test/y_test_nd.csv', index=False)
 
+    X_train.replace([np.inf, -np.inf], np.nan, inplace=True)
+    X_train.fillna(0, inplace=True)
+
+    X_test.replace([np.inf, -np.inf], np.nan, inplace=True)
+    X_test.fillna(0, inplace=True)
+
+
+    X_train_nd.replace([np.inf, -np.inf], np.nan, inplace=True)
+    X_train_nd.fillna(0, inplace=True)
+
+    X_test_nd.replace([np.inf, -np.inf], np.nan, inplace=True)
+    X_test_nd.fillna(0, inplace=True)
 
     # Categorical colums
-    cat_cols = ['HomeTeam', 'AwayTeam']
+    cat_cols = ['Division', 'HomeTeam', 'AwayTeam']
 
 
 
@@ -137,6 +154,7 @@ def training():
 
 
     num_pipe = Pipeline(steps=[ 
+    ('imputer', SimpleImputer(strategy='median')),
     ('scaler', StandardScaler())
     ])
 
@@ -198,7 +216,6 @@ def training():
                             random_state=42)
 
     logistic_RS.fit(X_train, y_train)
-    y_pred_logistic = logistic_RS.predict(X_test)
 
 
 
@@ -222,7 +239,6 @@ def training():
                             random_state=42)
     
     logistic_RS_nd.fit(X_train_nd, y_train_nd)
-    y_pred_logistic_nd = logistic_RS_nd.predict(X_test_nd)
 
 
     pipe_rf = Pipeline(steps=[
@@ -248,7 +264,6 @@ def training():
                         random_state=42)
 
     random_forest_RS.fit(X_train, y_train)
-    y_pred_rf = random_forest_RS.predict(X_test)
 
 
     pipe_rf_nd = Pipeline(steps=[
@@ -274,7 +289,6 @@ def training():
                         random_state=42)
 
     random_forest_RS_nd.fit(X_train_nd, y_train_nd)
-    y_pred_rf_nd = random_forest_RS_nd.predict(X_test_nd)
 
 
 
@@ -300,7 +314,6 @@ def training():
                         random_state=42)
 
     xgb_RS.fit(X_train, y_train)
-    y_pred_xgb = xgb_RS.predict(X_test)
 
 
     pipe_xgb_nd = Pipeline(steps=[
@@ -326,10 +339,8 @@ def training():
 
 
     y_train_xgb = y_train_nd.map({0: 0, 2: 1})
-    y_test_xgb = y_test_nd.map({0: 0, 2: 1})
 
     xgb_RS_nd.fit(X_train_nd, y_train_xgb)
-    y_pred_xgb_nd = xgb_RS_nd.predict(X_test_nd)
 
 
     pipe_knn = Pipeline(steps=[
@@ -352,7 +363,6 @@ def training():
                         random_state=42)
 
     knn_RS.fit(X_train, y_train)
-    y_pred_knn = knn_RS.predict(X_test)
 
 
     pipe_knn_nd = Pipeline(steps=[
@@ -378,7 +388,6 @@ def training():
 
 
     knn_RS_nd.fit(X_train_nd, y_train_nd)
-    y_pred_knn_nd = knn_RS_nd.predict(X_test_nd)
 
 
     pipe_gbm = Pipeline(steps=[
@@ -406,7 +415,6 @@ def training():
 
 
     gbm_RS.fit(X_train, y_train)
-    y_pred_gbm = gbm_RS.predict(X_test)
 
 
 
@@ -433,7 +441,6 @@ def training():
                         random_state=42)
 
     gbm_RS_nd.fit(X_train_nd, y_train_nd)
-    y_pred_gbm_nd = gbm_RS_nd.predict(X_test_nd)
 
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
