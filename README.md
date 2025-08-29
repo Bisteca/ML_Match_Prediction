@@ -20,7 +20,7 @@ The project includes:
 
 - Source: [Club Football Match Data 2000-2025](https://github.com/xgabora/Club-Football-Match-Data-2000-2025?tab=readme-ov-file)
 
-- Raw dataset: Original match data with information about teams, leagues, and results.
+- Raw dataset: Original match data with information about teams and leagues.
 
 - Processed dataset (X):
 
@@ -82,13 +82,6 @@ Evaluation metric:
 - Two-class prediction (Home Win, Away Win, draw removed): ~70% accuracy
 
 This shows that accuracy improves significantly when reducing the problem to two classes, though the model loses realism in predicting draws.
-
-Feature importance:
-Models like XGBoost and LightGBM allow extraction of feature importance, which can be visualized using:
-
-- Bar charts for top features
-
-- SHAP summary plots for detailed interpretation
 
 ---
 ## 🖥️ **Streamlit App**
