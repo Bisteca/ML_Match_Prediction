@@ -83,13 +83,6 @@ Evaluation metric:
 
 This shows that accuracy improves significantly when reducing the problem to two classes, though the model loses realism in predicting draws.
 
-Feature importance:
-Models like XGBoost and LightGBM allow extraction of feature importance, which can be visualized using:
-
-- Bar charts for top features
-
-- SHAP summary plots for detailed interpretation
-
 ---
 ## 🖥️ **Streamlit App**
 
