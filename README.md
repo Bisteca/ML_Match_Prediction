@@ -20,7 +20,7 @@ The project includes:
 
 - Source: [Club Football Match Data 2000-2025](https://github.com/xgabora/Club-Football-Match-Data-2000-2025?tab=readme-ov-file)
 
-- Raw dataset: Original match data with information about teams, leagues, and results.
+- Raw dataset: Original match data with information about teams and leagues.
 
 - Processed dataset (X):
 
