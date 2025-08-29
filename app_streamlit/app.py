@@ -7,10 +7,10 @@ import os
 import pickle
 from datetime import datetime
 BASE_DIR = os.path.dirname(__file__)  # Diretório onde app.py está
-model_path = os.path.join(BASE_DIR, "../models/final_model.pkl")
+model_path = os.path.join(BASE_DIR, "../models/final_model.joblib")
 
 final_model = joblib.load(model_path)
-X_not_draw_path = os.path.join(BASE_DIR, "../data/train/X_not_draw.csv")
+X_not_draw_path = os.path.join(BASE_DIR, "../data/train/X_not_draw_full.csv")
 X_not_draw = pd.read_csv(X_not_draw_path)
 
 
@@ -112,8 +112,15 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
     # --- Combine all features ---
     match_features = pd.DataFrame([{**prob_df.iloc[0].to_dict(), **home_profile.to_dict(), **away_profile.to_dict(), **interactions}])
     match_features = match_features.reindex(columns=X_not_draw.columns, fill_value=0)
+    cat_cols = ['Division', 'HomeTeam', 'AwayTeam']
 
-    
+    # Fixes types
+    for col in match_features.columns:
+        if col in cat_cols:
+            match_features[col] = match_features[col].astype(str).fillna("Unknown")
+        else:
+            match_features[col] = pd.to_numeric(match_features[col], errors='coerce').fillna(0)
+
     
     y_proba = final_model.predict_proba(match_features.drop(columns=['MatchDate']))[0]
     p_home, p_away = y_proba[1], y_proba[0]
