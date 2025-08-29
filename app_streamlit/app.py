@@ -123,7 +123,8 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
 
     
     y_proba = final_model.predict_proba(match_features.drop(columns=['MatchDate']))[0]
-    p_home, p_away = y_proba[1], y_proba[0]
+    p_home = y_proba[list(final_model.classes_).index(2)]
+    p_away = y_proba[list(final_model.classes_).index(0)]
     delta = 0.03
     total = 1
     if abs(p_home - p_away) < delta:
