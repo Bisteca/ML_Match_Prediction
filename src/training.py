@@ -23,7 +23,7 @@ def training():
     raw_file = os.path.join(base_dir, '..', 'data', 'processed', 'processed_data.csv')
     df = pd.read_csv(raw_file)
 
-    ligas = df['Division'].unique()
+    ligas = ['SP1','E0','D1','I1','F1']
     modelos = {}
     X_not_draw_dict = {}
     df = df[df['MatchDate'] > '2010-08']
@@ -53,19 +53,18 @@ def training():
             'DrawRateAway','LossRateHome','LossRateAway', 
             "OddsDifference", "EloRatio", "FormRatio", "GoalRateRatio", "WinRateDiff", "PointsDiff", "FormDiff", "Elo_ProbDiff", "FormOddsDiff", "StreakDiff", "BookieBiasHome", "DayOfWeek_sin", "DayOfWeek_cos", "Month_sin", "Month_cos", "Day_sin", "Day_cos",
             'OddSkew', 'FormVolatility', 'EloOddsGap', 'ImpliedProbTotal', 'BookieBiasAway'
-        ]]
+    ]]
         y = df_liga['Results']
-            
 
-
+        # elimina empates
         cols_draw = ['DrawStreakHome', 'DrawStreakAway', 
                     'DrawHomeAcum', 'DrawAwayAcum',
                     'DrawRateHome', 'DrawRateAway',
                     'OddDraw', 'ImpliedProbDraw', 'MaxDraw']
         # Dropping Draws
         not_draw= y != 1
-        X_not_draw = X[not_draw].copy()
-        X_not_draw = X_not_draw.drop(columns=cols_draw)
+        not_draw= y != 1
+        X_not_draw = X[not_draw].drop(columns=cols_draw).copy()
         y_not_draw = y[not_draw].copy()
 
         X_history = X_not_draw.copy() 
@@ -88,18 +87,9 @@ def training():
         y_train_nd = y_not_draw.loc[X_train_nd.index]
         y_test_nd = y_not_draw.loc[X_test_nd.index]
 
-        X_train.replace([np.inf, -np.inf], np.nan, inplace=True)
-        X_train.fillna(0, inplace=True)
-
-        X_test.replace([np.inf, -np.inf], np.nan, inplace=True)
-        X_test.fillna(0, inplace=True)
-
-
-        X_train_nd.replace([np.inf, -np.inf], np.nan, inplace=True)
-        X_train_nd.fillna(0, inplace=True)
-
-        X_test_nd.replace([np.inf, -np.inf], np.nan, inplace=True)
-        X_test_nd.fillna(0, inplace=True)
+        for X_ in [X_train_nd, X_test_nd]:
+            X_.replace([np.inf, -np.inf], np.nan, inplace=True)
+            X_.fillna(0, inplace=True)
 
         # Categorical colums
         cat_cols = ['Division', 'HomeTeam', 'AwayTeam']
@@ -213,7 +203,7 @@ def training():
                                 scoring= 'accuracy',
                                 random_state=42)
 
-        logistic_RS.fit(X_train, y_train)
+        #logistic_RS.fit(X_train, y_train)
 
 
 
@@ -236,7 +226,7 @@ def training():
                                 scoring= 'accuracy',
                                 random_state=42)
         
-        logistic_RS_nd.fit(X_train_nd, y_train_nd)
+        #logistic_RS_nd.fit(X_train_nd, y_train_nd)
 
 
         pipe_rf = Pipeline(steps=[
@@ -261,7 +251,7 @@ def training():
                             scoring= 'accuracy',
                             random_state=42)
 
-        random_forest_RS.fit(X_train, y_train)
+        #random_forest_RS.fit(X_train, y_train)
 
 
         pipe_rf_nd = Pipeline(steps=[
@@ -282,7 +272,7 @@ def training():
                             param_distributions=  random_forest_params_nd,
                             cv = 5,
                             verbose=2,
-                            n_jobs=1, 
+                            n_jobs=-1, 
                             scoring= 'accuracy',
                             random_state=42)
 
@@ -311,7 +301,7 @@ def training():
                             scoring= 'f1_macro',
                             random_state=42)
 
-        xgb_RS.fit(X_train, y_train)
+        #xgb_RS.fit(X_train, y_train)
 
 
         pipe_xgb_nd = Pipeline(steps=[
@@ -338,7 +328,7 @@ def training():
 
         y_train_xgb = y_train_nd.map({0: 0, 2: 1})
 
-        xgb_RS_nd.fit(X_train_nd, y_train_xgb)
+        #xgb_RS_nd.fit(X_train_nd, y_train_xgb)
 
 
         pipe_knn = Pipeline(steps=[
@@ -360,7 +350,7 @@ def training():
                             scoring= 'accuracy',
                             random_state=42)
 
-        knn_RS.fit(X_train, y_train)
+        #knn_RS.fit(X_train, y_train)
 
 
         pipe_knn_nd = Pipeline(steps=[
@@ -385,7 +375,7 @@ def training():
                             random_state=42)
 
 
-        knn_RS_nd.fit(X_train_nd, y_train_nd)
+        #knn_RS_nd.fit(X_train_nd, y_train_nd)
 
 
         pipe_gbm = Pipeline(steps=[
@@ -412,7 +402,7 @@ def training():
                             random_state=42)
 
 
-        gbm_RS.fit(X_train, y_train)
+        #gbm_RS.fit(X_train, y_train)
 
 
 
@@ -438,7 +428,7 @@ def training():
                             scoring= 'accuracy',
                             random_state=42)
 
-        gbm_RS_nd.fit(X_train_nd, y_train_nd)
+        #gbm_RS_nd.fit(X_train_nd, y_train_nd)
 
 
         base_dir = os.path.dirname(os.path.abspath(__file__))
