@@ -116,3 +116,7 @@ The interactive web app allows users to:
 ## 📌 **Conclusion**
 
 - This project demonstrates the application of Machine Learning in football to generate predictions and insights. While limited in predicting draws and real-time factors, it forms a solid foundation for more advanced applications in sports analytics.
+
+---
+## ✒️ **Citation**
+- Gábor, A. (2025). Club Football Match Data. Retrieved from https://github.com/xgabora/Club-Football-Match-Data-2000-2025/.
