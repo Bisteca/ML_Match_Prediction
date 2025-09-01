@@ -6,15 +6,27 @@ import joblib
 import os
 import pickle
 from datetime import datetime
-BASE_DIR = os.path.dirname(__file__)  
-model_path = os.path.join(BASE_DIR, "../models/final_model.joblib")
+BASE_DIR = os.path.dirname(__file__)
 
-final_model = joblib.load(model_path)
-X_not_draw_path = os.path.join(BASE_DIR, "../data/train/X_not_draw_full.csv")
-X_not_draw = pd.read_csv(X_not_draw_path)
+# --- Load Models ---
+models = {
+    "D1": joblib.load(os.path.join(BASE_DIR, "../models/RandomForest_NoDraw_D1.joblib")),
+    "E0": joblib.load(os.path.join(BASE_DIR, "../models/RandomForest_NoDraw_E0.joblib")),
+    "F1": joblib.load(os.path.join(BASE_DIR, "../models/RandomForest_NoDraw_F1.joblib")),
+    "I1": joblib.load(os.path.join(BASE_DIR, "../models/RandomForest_NoDraw_I1.joblib")),
+    "SP1": joblib.load(os.path.join(BASE_DIR, "../models/RandomForest_NoDraw_SP1.joblib"))
+}
 
+# --- Load X_not_draw per league ---
+X_not_draw_data = {
+    "D1": pd.read_csv(os.path.join(BASE_DIR, "../data/train/X_not_draw_D1.csv")),
+    "E0": pd.read_csv(os.path.join(BASE_DIR, "../data/train/X_not_draw_E0.csv")),
+    "F1": pd.read_csv(os.path.join(BASE_DIR, "../data/train/X_not_draw_F1.csv")),
+    "I1": pd.read_csv(os.path.join(BASE_DIR, "../data/train/X_not_draw_I1.csv")),
+    "SP1": pd.read_csv(os.path.join(BASE_DIR, "../data/train/X_not_draw_SP1.csv"))
+}
 
-def prob(Date, HomeTeam, AwayTeam, df_league):
+def prob(Date, HomeTeam, AwayTeam, league_code):
     """Predict probabilities for a match including optional draw adjustment.
 
     Args:
@@ -28,7 +40,8 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
     """
     # --- Basic match info ---
 
-    X_not_draw = df_league
+    X_not_draw = X_not_draw_data[league_code]
+    final_model = models[league_code]
     date = pd.to_datetime(Date)
     home_team = HomeTeam.title()
     away_team = AwayTeam.title()
@@ -53,10 +66,12 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
         'Season': year
 
     }, index=[0])
-
+    
+    
     
     # Home Team
     home_games = X_not_draw[X_not_draw['HomeTeam'] == home_team].sort_values('MatchDate')
+    
     home_profile = home_games.loc[:, [
         'C_LTH', 'C_HTB', 'C_PHB', 'HomeElo', 'Form3Home','Form5Home','GF3Home',
         'GA3Home', 'GF5Home', 'GA5Home', 'WinStreakHome', 'DefeatStreakHome',
@@ -65,10 +80,12 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
         'ScoredGoalsMeanHome', 'ConcededGoalsMeanHome', 'GoalsDifferenceMeanHome',
         'WinHomeAcum', 'LossHomeAcum','WinRateHome', 'LossRateHome',
         'OddHome', 'ImpliedProbHome', 'HandiHome', 'MaxHome', 'BookieBiasHome'
-    ]].shift(1).rolling(5).mean().iloc[-1]  # pega só o último perfil
+    ]].shift(1).rolling(5, min_periods=1).mean().iloc[-1]  
+    
     
     # Away Team 
     away_games = X_not_draw[X_not_draw['AwayTeam'] == away_team].sort_values('MatchDate')
+    
     away_profile = away_games.loc[:, [
         'C_LTA', 'C_VHD', 'C_VAD', 'AwayElo', 'Form3Away','Form5Away','GF3Away',
         'GA3Away', 'GF5Away', 'GA5Away', 'WinStreakAway', 'DefeatStreakAway',
@@ -77,7 +94,11 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
         'ScoredGoalsMeanAway','ConcededGoalsMeanAway', 'GoalsDifferenceMeanAway',
         'WinAwayAcum', 'LossAwayAcum','WinRateAway','LossRateAway',
         'OddAway', 'ImpliedProbAway', 'HandiAway', 'MaxAway', 'BookieBiasAway'
-    ]].shift(1).rolling(5).mean().iloc[-1]
+    ]].shift(1).rolling(5, min_periods=1).mean().iloc[-1]
+    
+    num_cols = X_not_draw.select_dtypes(include=np.number).columns
+    home_profile.fillna(X_not_draw[num_cols].mean(), inplace=True)
+    away_profile.fillna(X_not_draw[num_cols].mean(), inplace=True)
 
     # --- Compute interaction features ---
     interactions = {
@@ -121,7 +142,8 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
         else:
             match_features[col] = pd.to_numeric(match_features[col], errors='coerce').fillna(0)
 
-    
+   
+
     y_proba = final_model.predict_proba(match_features.drop(columns=['MatchDate']))[0]
     p_home = y_proba[list(final_model.classes_).index(2)]
     p_away = y_proba[list(final_model.classes_).index(0)]
@@ -143,38 +165,24 @@ def prob(Date, HomeTeam, AwayTeam, df_league):
 
 # --- Streamlit ---
 st.title("⚽ Match Predictor!")
-st.markdown(
-    """
-    Welcome to the Match Predictor!  
-    Select the Home and Away teams, enter the date of the match, and click **Predict**  
-    to see the probability of Home win, Draw, and Away win.
-    """,
-    unsafe_allow_html=True
-)
+st.markdown("""
+Select the Home and Away teams, enter the date of the match, and click **Predict**  
+to see the probability of Home win, Draw, and Away win.
+""", unsafe_allow_html=True)
 
-leagues = [
-    ("LaLiga", "SP1"),
-    ("Premier League", "E0"),
-    ("Serie A", "I1"),
-    ("Bundesliga", "D1"),
-    ("Ligue 1", "F1")
-]
+leagues = [("LaLiga", "SP1"), ("Premier League", "E0"), ("Serie A", "I1"), ("Bundesliga", "D1"), ("Ligue 1", "F1")]
 
 league_name = st.selectbox("Select the league:", [l[0] for l in leagues])
 league_code = next(code for name, code in leagues if name == league_name)
 
-df_league = X_not_draw[X_not_draw['Division'].isin([league_code])]
-
+df_league = X_not_draw_data[league_code]
 available_teams = sorted(pd.unique(df_league[['HomeTeam', 'AwayTeam']].values.ravel()))
+
 with st.expander("See available teams"):
     st.dataframe(pd.DataFrame(available_teams, columns=["Teams"]))
 
-
-
 home_team = st.selectbox("Select the Home Team:", available_teams, index=0)
-
 away_options = [team for team in available_teams if team != home_team]
-
 away_team = st.selectbox("Select the Away Team:", away_options, index=0)
 
 date_str = st.text_input("Enter the date of the match (YYYY-MM-DD):", "")
@@ -184,12 +192,8 @@ if st.button("Predict"):
         st.warning("Please fill all fields!")
     else:
         try:
-            from datetime import datetime
-            datetime.strptime(date_str, "%Y-%m-%d")  
-            prediction = prob(date_str, home_team, away_team, df_league)
-            st.markdown(
-                f"<h3 style='color:green'>Prediction:</h3><p style='font-size:20px'>{prediction}</p>",
-                unsafe_allow_html=True
-            )
+            datetime.strptime(date_str, "%Y-%m-%d")
+            prediction = prob(date_str, home_team, away_team, league_code)
+            st.markdown(f"<h3 style='color:green'>Prediction:</h3><p style='font-size:20px'>{prediction}</p>", unsafe_allow_html=True)
         except ValueError:
             st.warning("Date must be in YYYY-MM-DD format.")

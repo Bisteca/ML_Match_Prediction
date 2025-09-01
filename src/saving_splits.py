@@ -23,8 +23,8 @@ def save_splits():
     # ----------------------------
     # Splits com empates
     # ----------------------------
-    X_train = X[X['MatchDate'] < '2021-07'].drop(columns='MatchDate')
-    X_test = X[X['MatchDate'] > '2021-08'].drop(columns='MatchDate')
+    X_train = X[X['MatchDate'] < '2021-07']
+    X_test = X[X['MatchDate'] > '2021-08']
     y_train = y.loc[X_train.index]
     y_test = y.loc[X_test.index]
 
@@ -42,27 +42,12 @@ def save_splits():
 
     # Filtra os targets de treino e teste sem empate
     y_train_nd = y_not_draw[y_not_draw.index.isin(X[X['MatchDate'] < '2021-07'].index)]
-    X_train_nd = X_not_draw.loc[y_train_nd.index].drop(columns='MatchDate')
+    X_train_nd = X_not_draw.loc[y_train_nd.index]
 
     y_test_nd = y_not_draw[y_not_draw.index.isin(X[X['MatchDate'] > '2021-08'].index)]
-    X_test_nd = X_not_draw.loc[y_test_nd.index].drop(columns='MatchDate')
+    X_test_nd = X_not_draw.loc[y_test_nd.index]
 
 
-        # ----------------------------
-        # Tratamento de NaN e infinitos
-        # ----------------------------
-    X_train.replace([np.inf, -np.inf], np.nan, inplace=True)
-    X_train.fillna(0, inplace=True)
-
-    X_test.replace([np.inf, -np.inf], np.nan, inplace=True)
-    X_test.fillna(0, inplace=True)
-
-
-    X_train_nd.replace([np.inf, -np.inf], np.nan, inplace=True)
-    X_train_nd.fillna(0, inplace=True)
-
-    X_test_nd.replace([np.inf, -np.inf], np.nan, inplace=True)
-    X_test_nd.fillna(0, inplace=True)
 
     # ----------------------------
     # Criar pastas de destino

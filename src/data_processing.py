@@ -19,7 +19,6 @@ def process_data():
     leagues = ['SP1', 'E0', 'I1', 'D1', 'F1']  # SP1=LaLiga, E0=Premier League, I1=Serie A, D1=Bundesliga, F1=Ligue 1
     df = df[df['Division'].isin(leagues)]
     df.drop(columns=['MatchTime'], inplace= True )
-    df = df.fillna(0) 
     
     le = LabelEncoder()
     df['Results'] = le.fit_transform(df['FTResult'])
@@ -67,7 +66,10 @@ def process_data():
     df['GA5Home'] = df2.groupby('HomeTeam')['FTAway'].shift(1).rolling(5).sum().reindex(df.index)
     df['GA5Away'] = df3.groupby('AwayTeam')['FTHome'].shift(1).rolling(5).sum().reindex(df.index)
 
-    df[['GF3Away', 'GF3Home', 'GF5Away', 'GF5Home','GA5Away', 'GA5Home', 'GA3Home', 'GA3Away']] = df[['GF3Away', 'GF3Home', 'GF5Away', 'GF5Home','GA5Away', 'GA5Home', 'GA3Home', 'GA3Away']].fillna(0) 
+    df[['GF3Away', 'GF3Home', 'GF5Away', 'GF5Home','GA5Away', 'GA5Home', 'GA3Home', 'GA3Away']] = df[['GF3Away', 'GF3Home', 'GF5Away', 'GF5Home','GA5Away', 'GA5Home', 'GA3Home', 'GA3Away']]
+    cols = [ 'GF3Away', 'GF3Home', 'GF5Away', 'GF5Home','GA5Away', 'GA5Home', 'GA3Home', 'GA3Away']
+    for col in cols:
+        df[col] = df[col].fillna(df[col].mean())
 
 
     winshome = df2.groupby('HomeTeam')['Results'].transform(
@@ -75,18 +77,18 @@ def process_data():
                         .groupby((x != 2).cumsum())  
                         .cumsum()
                         .shift(1)
-    ).fillna(0)
+    )
     df['WinStreakHome'] = winshome.reindex(df.index)
-
+    df['WinStreakHome'] = df['WinStreakHome'].fillna(0.5)
 
     winsaway = df3.groupby('AwayTeam')['Results'].transform(
         lambda x: x.eq(0).astype(int)
                         .groupby((x != 0).cumsum())  
                         .cumsum()
                         .shift(1)
-    ).fillna(0)
+    )
     df['WinStreakAway'] = winsaway.reindex(df.index)
-
+    df['WinStreakAway'] = df['WinStreakAway'].fillna(0.5)
 
 
     drawhome = df2.groupby('HomeTeam')['Results'].transform(
@@ -94,18 +96,18 @@ def process_data():
                         .groupby((x != 1).cumsum())  
                         .cumsum()
                         .shift(1)
-    ).fillna(0)
+    )
     df['DrawStreakHome'] = drawhome.reindex(df.index)
-
+    df['DrawStreakHome'] = df['DrawStreakHome'].fillna(0.5)
 
     drawaway = df3.groupby('AwayTeam')['Results'].transform(
         lambda x: x.eq(1).astype(int)
                         .groupby((x != 1).cumsum())  
                         .cumsum()
                         .shift(1)
-    ).fillna(0)
+    )
     df['DrawStreakAway'] = drawaway.reindex(df.index)
-
+    df['DrawStreakAway'] = df['DrawStreakAway'].fillna(0.5)
 
 
 
@@ -114,18 +116,18 @@ def process_data():
                         .groupby((x != 0).cumsum())  
                         .cumsum()
                         .shift(1)
-    ).fillna(0)
+    )
     df['DefeatStreakHome'] = defeathome.reindex(df.index)
-
+    df['DefeatStreakHome'] = df['DefeatStreakHome'].fillna(0.5)
 
     defeataway = df3.groupby('AwayTeam')['Results'].transform(
         lambda x: x.eq(2).astype(int)
                         .groupby((x != 2).cumsum())  
                         .cumsum()
                         .shift(1)
-    ).fillna(0)
+    )
     df['DefeatStreakAway'] = defeataway.reindex(df.index)
-
+    df['DefeatStreakAway'] = df['DefeatStreakAway'].fillna(0.5)
 
     df4 = df.sort_values(['HomeTeam', 'AwayTeam', 'MatchDate'])
     h2hhome =  df4.groupby(['HomeTeam', 'AwayTeam'])['Results'].transform(lambda x: (x.shift(1) == 2).rolling(5, min_periods=1).sum())
@@ -146,11 +148,12 @@ def process_data():
 
     goalhome = df2.groupby('HomeTeam')['FTHome'].shift(1).rolling(3).std()
     # Standard deviation of goals scored by home team in last 3 home matches.
-    df['GF3HomeSTD'] = goalhome.reindex(df.index).fillna(0)
-
+    df['GF3HomeSTD'] = goalhome.reindex(df.index)
+    df['GF3HomeSTD'] = df['GF3HomeSTD'].fillna(df['GF3HomeSTD'].mean())
     goalaway = df3.groupby('AwayTeam')['FTAway'].shift(1).rolling(3).std()
     # Standard deviation of goals scored by away team in last 3 away matches.
-    df['GF3AwaySTD'] = goalaway.reindex(df.index).fillna(0)
+    df['GF3AwaySTD'] = goalaway.reindex(df.index)
+    df['GF3AwaySTD'] = df['GF3AwaySTD'].fillna(df['GF3AwaySTD'].mean())
 
     points_home = {2:3, 1:1, 0:0}
     df['PointsHome'] = df['Results'].map(points_home)
@@ -161,25 +164,29 @@ def process_data():
     df['Season'] = np.where(df['Month'] >= 8, df['Year'], df['Year'] - 1)
 
     acumhome = df.groupby(['HomeTeam', 'Season'])['PointsHome'].transform(lambda x: x.shift(1).cumsum())
-    df['PointsAcumHome'] = acumhome.reindex(df.index).fillna(0)
-
+    df['PointsAcumHome'] = acumhome.reindex(df.index)
+    df['PointsAcumHome'] = df['PointsAcumHome'].fillna(df['PointsAcumHome'].mean())
     acumaway = df.groupby(['AwayTeam', 'Season'])['PointsAway'].transform(lambda x: x.shift(1).cumsum())
-    df['PointsAcumAway'] = acumaway.reindex(df.index).fillna(0)
-
+    df['PointsAcumAway'] = acumaway.reindex(df.index)
+    df['PointsAcumAway'] = df['PointsAcumAway'].fillna(df['PointsAcumAway'].mean())
 
     df2 = df.sort_values(['HomeTeam', 'MatchDate'])
     df3 = df.sort_values(['AwayTeam', 'MatchDate'])
     gf_home = df2.groupby(['HomeTeam', 'Season'])['FTHome'].transform(lambda x: x.shift(1).cumsum())
-    df['GF_Total_Home'] = gf_home.reindex(df.index).fillna(0)
+    df['GF_Total_Home'] = gf_home.reindex(df.index)
+    df['GF_Total_Home'] = df['GF_Total_Home'].fillna(df['GF_Total_Home'].mean())
 
     gf_away = df3.groupby(['AwayTeam', 'Season'])['FTAway'].transform(lambda x: x.shift(1).cumsum())
-    df['GF_Total_Away'] = gf_away.reindex(df.index).fillna(0)
+    df['GF_Total_Away'] = gf_away.reindex(df.index)
+    df['GF_Total_Away'] = df['GF_Total_Away'].fillna(df['GF_Total_Away'].mean())
 
     gf_home = df2.groupby(['HomeTeam', 'Season'])['FTAway'].transform(lambda x: x.shift(1).cumsum())
-    df['GA_Total_Home'] = gf_home.reindex(df.index).fillna(0)
+    df['GA_Total_Home'] = gf_home.reindex(df.index)
+    df['GA_Total_Home'] = df['GA_Total_Home'].fillna(df['GA_Total_Home'].mean())
 
     gf_away = df3.groupby(['AwayTeam', 'Season'])['FTHome'].transform(lambda x: x.shift(1).cumsum())
-    df['GA_Total_Away'] = gf_away.reindex(df.index).fillna(0)
+    df['GA_Total_Away'] = gf_away.reindex(df.index)
+    df['GA_Total_Away'] = df['GA_Total_Away'].fillna(df['GA_Total_Away'].mean())
 
     df['GD_total_Home'] = df['GF_Total_Home'] - df['GA_Total_Home']
     df['GD_total_Away'] = df['GF_Total_Away'] - df['GA_Total_Away']
@@ -189,46 +196,71 @@ def process_data():
     game_played_home = df.groupby(['HomeTeam', 'Season'])['GameCount'].transform(lambda x: x.shift(1).cumsum())
     game_played_away = df.groupby(['AwayTeam', 'Season'])['GameCount'].transform(lambda x: x.shift(1).cumsum())
 
-    df['PointMeanHome'] = (df['PointsAcumHome'] / game_played_home).fillna(0)
-    df['PointMeanAway'] = (df['PointsAcumAway'] / game_played_away).fillna(0)
+    df['PointMeanHome'] = (df['PointsAcumHome'] / game_played_home)
+    df['PointMeanHome'] = df['PointMeanHome'].fillna(df['PointMeanHome'].mean())
 
-    df['ScoredGoalsMeanHome']= (df['GF_Total_Home'] / game_played_home).fillna(0)
-    df['ScoredGoalsMeanAway']= (df['GF_Total_Away'] / game_played_away).fillna(0)
+    df['PointMeanAway'] = (df['PointsAcumAway'] / game_played_away)
+    df['PointMeanAway'] = df['PointMeanAway'].fillna(df['PointMeanAway'].mean())
 
-    df['ConcededGoalsMeanHome']= (df['GA_Total_Home']/ game_played_home).fillna(0)
-    df['ConcededGoalsMeanAway']= (df['GA_Total_Away'] / game_played_away).fillna(0)
+    df['ScoredGoalsMeanHome']= (df['GF_Total_Home'] / game_played_home)
+    df['ScoredGoalsMeanHome'] = df['ScoredGoalsMeanHome'].fillna(df['ScoredGoalsMeanHome'].mean())
 
-    df['GoalsDifferenceMeanHome']= (df['GD_total_Home']/ game_played_home).fillna(0)
-    df['GoalsDifferenceMeanAway']= (df['GD_total_Away'] / game_played_away).fillna(0)
+    df['ScoredGoalsMeanAway']= (df['GF_Total_Away'] / game_played_away)
+    df['ScoredGoalsMeanAway'] = df['ScoredGoalsMeanAway'].fillna(df['ScoredGoalsMeanAway'].mean())
+
+    df['ConcededGoalsMeanHome']= (df['GA_Total_Home']/ game_played_home)
+    df['ConcededGoalsMeanHome'] = df['ConcededGoalsMeanHome'].fillna(df['ConcededGoalsMeanHome'].mean())
+
+    df['ConcededGoalsMeanAway']= (df['GA_Total_Away'] / game_played_away)
+    df['ConcededGoalsMeanAway'] = df['ConcededGoalsMeanAway'].fillna(df['ConcededGoalsMeanAway'].mean())
+
+    df['GoalsDifferenceMeanHome']= (df['GD_total_Home']/ game_played_home)
+    df['GoalsDifferenceMeanHome'] = df['GoalsDifferenceMeanHome'].fillna(df['GoalsDifferenceMeanHome'].mean())
+
+    df['GoalsDifferenceMeanAway']= (df['GD_total_Away'] / game_played_away)
+    df['GoalsDifferenceMeanAway'] = df['GoalsDifferenceMeanAway'].fillna(df['GoalsDifferenceMeanAway'].mean())
 
     df['WinHome'] = (df['FTResult'] == 'H').astype(int)
     df['Draw'] = (df['FTResult'] == 'D').astype(int)
     df['WinAway'] = (df['FTResult'] == 'A').astype(int)
 
-    df['WinHomeAcum'] = df.groupby(['HomeTeam', 'Season'])['WinHome'].transform(lambda x: x.shift(1).cumsum()).fillna(0)
-    df['WinAwayAcum'] = df.groupby(['AwayTeam', 'Season'])['WinAway'].transform(lambda x: x.shift(1).cumsum()).fillna(0)
+    df['WinHomeAcum'] = df.groupby(['HomeTeam', 'Season'])['WinHome'].transform(lambda x: x.shift(1).cumsum())
+    df['WinHomeAcum'] = df['WinHomeAcum'].fillna(df['WinHomeAcum'].mean())
+    df['WinAwayAcum'] = df.groupby(['AwayTeam', 'Season'])['WinAway'].transform(lambda x: x.shift(1).cumsum())
+    df['WinAwayAcum'] = df['WinAwayAcum'].fillna(df['WinAwayAcum'].mean())
 
     df['DrawHomeAcum'] = df.groupby(['HomeTeam', 'Season'])['Draw'].transform(lambda x: x.shift(1).cumsum()).fillna(0)
     df['DrawAwayAcum'] = df.groupby(['AwayTeam', 'Season'])['Draw'].transform(lambda x: x.shift(1).cumsum()).fillna(0)
 
-    df['LossHomeAcum'] = df['WinAwayAcum'].fillna(0)
-    df['LossAwayAcum'] = df['WinHomeAcum'] .fillna(0)
+    df['LossHomeAcum'] = df['WinAwayAcum']
+    df['LossHomeAcum'] = df['LossHomeAcum'].fillna(df['LossHomeAcum'].mean())
 
+    df['LossAwayAcum'] = df['WinHomeAcum'] 
+    df['LossAwayAcum'] = df['LossAwayAcum'].fillna(df['LossAwayAcum'].mean())
 
-    df['WinRateHome'] = (df['WinHomeAcum']  / game_played_home).fillna(0)
-    df['WinRateAway'] = (df['WinAwayAcum'] / game_played_away).fillna(0)
+    df['WinRateHome'] = (df['WinHomeAcum']  / game_played_home)
+    df['WinRateHome'] = df['WinRateHome'].fillna(df['WinRateHome'].mean())
 
-    df['DrawRateHome'] = (df['DrawHomeAcum'] / game_played_home).fillna(0)
-    df['DrawRateAway'] = (df['DrawAwayAcum'] / game_played_away).fillna(0)
+    df['WinRateAway'] = (df['WinAwayAcum'] / game_played_away)
+    df['WinRateAway'] = df['WinRateAway'].fillna(df['WinRateAway'].mean())
 
-    df['LossRateHome'] = (df['LossHomeAcum'] / game_played_home).fillna(0)
-    df['LossRateAway'] = (df['LossAwayAcum'] / game_played_away).fillna(0)
+    df['DrawRateHome'] = (df['DrawHomeAcum'] / game_played_home)
+    df['DrawRateHome'] = df['DrawRateHome'].fillna(df['DrawRateHome'].mean())
 
+    df['DrawRateAway'] = (df['DrawAwayAcum'] / game_played_away)
+    df['DrawRateAway'] = df['DrawRateAway'].fillna(df['DrawRateAway'].mean())
+
+    df['LossRateHome'] = (df['LossHomeAcum'] / game_played_home)
+    df['LossRateHome'] = df['LossRateHome'].fillna(df['LossRateHome'].mean())
+
+    df['LossRateAway'] = (df['LossAwayAcum'] / game_played_away)
+    df['LossRateAway'] = df['LossRateAway'].fillna(df['LossRateAway'].mean())
 
 
     df["OddsDifference"] = df["ImpliedProbHome"] - df["ImpliedProbAway"]
 
     df["EloRatio"] = df["HomeElo"] / (df["AwayElo"] + 1e-6)
+    df['EloRatio'] = df['EloRatio'].replace([np.inf, -np.inf], df['EloRatio'].mean())
 
     df["FormRatio"] = df["Form3Home"] / (df["Form3Away"] + 1)
 
@@ -262,8 +294,6 @@ def process_data():
     df['FormVolatility'] = (df['Form5Home'] - df['Form3Home']) - (df['Form5Away'] - df['Form3Away'])
 
     df['OddSkew'] = (df['OddHome'] - df['OddAway']) / (df['OddHome'] + df['OddAway'])
-
-    df = df.replace([np.inf, -np.inf], 0).fillna(0)
 
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
