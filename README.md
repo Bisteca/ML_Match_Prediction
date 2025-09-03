@@ -24,7 +24,7 @@ The project includes:
 
 - Processed dataset (X):
 
-  - Matches: 43,708
+  - Matches: 26,000
 
   - Features: 108 columns, including team stats, performance metrics, and results
 
